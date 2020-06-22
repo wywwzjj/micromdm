@@ -1,8 +1,0 @@
-syntax = "proto3";
-
-package commandqueued;
-
-message CommandQueued {
-    string device_udid = 1;
-    string command_uuid = 2;
-}
