@@ -6,3 +6,4 @@ build/
 ## website gitignore
 website/public/
 public/
+website/.netlify

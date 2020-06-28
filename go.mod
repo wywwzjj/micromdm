@@ -1,4 +1,4 @@
-module micromdm.io
+module micromdm.io/v2
 
 go 1.14
 
