@@ -12,3 +12,6 @@ download:
 install-tools: download
 	@echo "Installing tools"
 	@cat cmd/tools/tools.go | grep _ | awk -F'"' '{print $$2}' | xargs -tI % go install %
+
+micromdm:
+	go install -race ./cmd/micromdm
