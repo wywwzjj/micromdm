@@ -20,5 +20,7 @@ func FromContext(ctx context.Context) Logger {
 		return log.NewNopLogger()
 	}
 
-	return v
+	span := traceFromContext(ctx)
+
+	return log.With(v, "trace_id", span.TraceID)
 }
