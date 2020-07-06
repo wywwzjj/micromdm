@@ -9,4 +9,5 @@ require (
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/oklog/ulid/v2 v2.0.2
 	github.com/peterbourgon/ff/v3 v3.0.0
+	rsc.io/goversion v1.2.0
 )

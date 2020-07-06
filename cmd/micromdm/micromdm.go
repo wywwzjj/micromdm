@@ -17,6 +17,7 @@ import (
 	"github.com/peterbourgon/ff/v3/ffcli"
 
 	"micromdm.io/v2/pkg/log"
+	"micromdm.io/v2/pkg/version"
 )
 
 // write a pid so that the server can be restarted with SIGHUP
@@ -42,7 +43,7 @@ func micromdm(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		ShortUsage: "version [<arg> ...]",
 		ShortHelp:  "Print version information.",
 		Exec: func(_ context.Context, args []string) error {
-			fmt.Println("v2dev")
+			version.PrintFull()
 			return nil
 		},
 	}
