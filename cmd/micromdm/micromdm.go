@@ -33,10 +33,14 @@ func micromdm(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		ctx       = context.Background()
 		logger    = log.New()
 		ffOptions = []ff.Option{ff.WithConfigFileParser(ff.PlainParser), ff.WithConfigFileFlag("config")}
-		rootfs    = flag.NewFlagSet("micromdm", flag.ExitOnError)
+		rootfs    = flag.NewFlagSet("micromdm", flag.ContinueOnError)
 		pidfile   = rootfs.String("pidfile", "/tmp/micromdm.pid", "Path to server pidfile")
 		_         = rootfs.String("config", "", "Path to config file (optional)")
 	)
+
+	// default output is os.Stderr.
+	// setting the output and flag.ContinueOnError overrides allows testing usage.
+	rootfs.SetOutput(stderr)
 
 	version := &ffcli.Command{
 		Name:       "version",
@@ -48,11 +52,21 @@ func micromdm(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		},
 	}
 
+	// add a help subcommand to make usage more discoverable.
+	helpCmd := &ffcli.Command{
+		Name:      "help",
+		UsageFunc: func(c *ffcli.Command) string { return "" },
+		Exec: func(_ context.Context, args []string) error {
+			rootfs.Usage()
+			return flag.ErrHelp
+		},
+	}
+
 	root := &ffcli.Command{
 		ShortUsage:  "micromdm [flags] <subcommand>",
 		FlagSet:     rootfs,
 		Options:     ffOptions,
-		Subcommands: []*ffcli.Command{version},
+		Subcommands: []*ffcli.Command{helpCmd, version},
 		Exec: func(context.Context, []string) error {
 			if err := writePID(*pidfile); err != nil {
 				return err
@@ -107,8 +121,10 @@ func micromdm(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	}
 
 	switch err := root.ParseAndRun(ctx, args[1:]); {
-	case err == nil, errors.Is(err, flag.ErrHelp):
+	case err == nil:
 		return 0
+	case errors.Is(err, flag.ErrHelp):
+		return 2
 	default:
 		fmt.Fprintln(stderr) // when Ctrl+C is used, avoid messing up the logger line
 		log.Info(logger).Log("exit", err)
