@@ -30,12 +30,11 @@ func writePID(path string) error {
 
 func micromdm(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	var (
-		ctx       = context.Background()
-		logger    = log.New(log.Output(stderr))
-		ffOptions = []ff.Option{ff.WithConfigFileParser(ff.PlainParser), ff.WithConfigFileFlag("config")}
-		rootfs    = flag.NewFlagSet("micromdm", flag.ContinueOnError)
-		pidfile   = rootfs.String("pidfile", "/tmp/micromdm.pid", "Path to server pidfile")
-		_         = rootfs.String("config", "", "Path to config file (optional)")
+		ctx     = context.Background()
+		logger  = log.New(log.Output(stderr))
+		rootfs  = flag.NewFlagSet("micromdm", flag.ContinueOnError)
+		pidfile = rootfs.String("pidfile", "/tmp/micromdm.pid", "Path to server pidfile")
+		_       = rootfs.String("config", "", "Path to config file (optional)")
 	)
 
 	// default output is os.Stderr.
@@ -65,7 +64,7 @@ func micromdm(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	root := &ffcli.Command{
 		ShortUsage:  "micromdm [flags] <subcommand>",
 		FlagSet:     rootfs,
-		Options:     ffOptions,
+		Options:     []ff.Option{ff.WithEnvVarPrefix("MICROMDM"), ff.WithConfigFileParser(ff.PlainParser), ff.WithConfigFileFlag("config")},
 		Subcommands: []*ffcli.Command{helpCmd, version},
 		Exec: func(context.Context, []string) error {
 			if err := writePID(*pidfile); err != nil {
