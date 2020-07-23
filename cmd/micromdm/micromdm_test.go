@@ -44,7 +44,7 @@ func checkExitAfterSignal(t *testing.T, stdin, stdout, stderr *bytes.Buffer) {
 
 func checkLogSwap(t *testing.T, stdin, stdout, stderr *bytes.Buffer) {
 	output := stderr.String()
-	debugsub := `level=debug msg="swapping level" debug=true`
+	debugsub := `level=info msg="swapping level" debug=true`
 	if !strings.Contains(output, debugsub) {
 		t.Errorf("want %q in output, got:\n%s", debugsub, output)
 	}

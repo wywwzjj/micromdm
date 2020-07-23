@@ -67,6 +67,13 @@ func JSON() Option {
 	}
 }
 
+// StartDebug creates a logger configured to allow debug level logs from the start.
+func StartDebug() Option {
+	return func(c *config) {
+		c.debug = true
+	}
+}
+
 // Output configures the log output. Stderr is default.
 func Output(w io.Writer) Option {
 	return func(c *config) {
@@ -78,6 +85,7 @@ type config struct {
 	w      io.Writer
 	format func(io.Writer) log.Logger
 	sig    os.Signal
+	debug  bool
 }
 
 // New creates a Logger.
@@ -96,11 +104,14 @@ func New(opts ...Option) *log.SwapLogger {
 	base = log.With(base, "ts", log.DefaultTimestampUTC)
 	base = level.NewInjector(base, level.InfoValue())
 	lev := level.AllowInfo()
+	if c.debug {
+		lev = level.AllowDebug()
+	}
 
 	var swapLogger log.SwapLogger
 	swapLogger.Swap(level.NewFilter(base, lev))
 
-	go c.swapLevelHandler(base, &swapLogger, false)
+	go c.swapLevelHandler(base, &swapLogger, c.debug)
 	return &swapLogger
 }
 
@@ -116,7 +127,7 @@ func (c *config) swapLevelHandler(base Logger, swapLogger *log.SwapLogger, debug
 			newLogger := level.NewFilter(base, level.AllowDebug())
 			swapLogger.Swap(newLogger)
 		}
-		Debug(swapLogger).Log("msg", "swapping level", "debug", !debug)
+		Info(swapLogger).Log("msg", "swapping level", "debug", !debug)
 		debug = !debug
 	}
 }
