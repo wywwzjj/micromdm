@@ -33,18 +33,19 @@ func writePID(path string) error {
 type cliFlags struct {
 	siteName string
 	http     string
+	pidfile  string
 }
 
 func micromdm(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	var (
-		ctx     = context.Background()
-		logger  = log.New(log.Output(stderr))
-		cli     = &cliFlags{}
-		rootfs  = flag.NewFlagSet("micromdm", flag.ContinueOnError)
-		pidfile = rootfs.String("pidfile", "/tmp/micromdm.pid", "Path to server pidfile")
-		_       = rootfs.String("config", "", "Path to config file (optional)")
+		ctx    = context.Background()
+		logger = log.New(log.Output(stderr))
+		cli    = &cliFlags{}
+		rootfs = flag.NewFlagSet("micromdm", flag.ContinueOnError)
+		_      = rootfs.String("config", "", "Path to config file (optional)")
 	)
 
+	rootfs.StringVar(&cli.pidfile, "pidfile", "/tmp/micromdm.pid", "Path to server pidfile")
 	rootfs.StringVar(&cli.siteName, "site_name", "Acme", "Name of the site as it would appear in the top left of the HTML UI")
 	rootfs.StringVar(&cli.http, "http", "localhost:9000", "HTTP service address")
 
@@ -79,7 +80,7 @@ func micromdm(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		Options:     []ff.Option{ff.WithEnvVarPrefix("MICROMDM"), ff.WithConfigFileParser(ff.PlainParser), ff.WithConfigFileFlag("config")},
 		Subcommands: []*ffcli.Command{helpCmd, version},
 		Exec: func(context.Context, []string) error {
-			if err := writePID(*pidfile); err != nil {
+			if err := writePID(cli.pidfile); err != nil {
 				return err
 			}
 
@@ -120,7 +121,7 @@ func micromdm(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 						return fmt.Errorf("received signal %s", sig)
 					}
 				}, func(error) {
-					os.Remove(*pidfile)
+					os.Remove(cli.pidfile)
 					cancel()
 				})
 			}
