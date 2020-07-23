@@ -35,6 +35,10 @@ type cliFlags struct {
 	siteName string
 	http     string
 	pidfile  string
+
+	csrfKey        string
+	csrfCookieName string
+	csrfFieldName  string
 }
 
 func micromdm(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
@@ -50,6 +54,9 @@ func micromdm(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	rootfs.BoolVar(&cli.debug, "debug", false, "Allow debug level")
 	rootfs.StringVar(&cli.siteName, "site_name", "Acme", "Name of the site as it would appear in the top left of the HTML UI")
 	rootfs.StringVar(&cli.http, "http", "localhost:9000", "HTTP service address")
+	rootfs.StringVar(&cli.csrfKey, "csrf_key", "", "32 byte long key")
+	rootfs.StringVar(&cli.csrfCookieName, "csrf_cookie_name", "micromdm_csrf", "Name of CSRF Cookie")
+	rootfs.StringVar(&cli.csrfFieldName, "csrf_field_name", "micromdm.csrf", "Name of CSRF field name in HTML input")
 
 	// default output is os.Stderr.
 	// setting the output and flag.ContinueOnError overrides allows testing usage.

@@ -11,8 +11,11 @@ type server struct {
 
 func ui(f *cliFlags, logger log.Logger) (*frontend.Server, error) {
 	return frontend.New(frontend.Config{
-		Logger:   logger,
-		SiteName: f.siteName,
+		Logger:         logger,
+		SiteName:       f.siteName,
+		CSRFKey:        []byte(f.csrfKey),
+		CSRFCookieName: f.csrfCookieName,
+		CSRFFieldName:  f.csrfFieldName,
 	})
 }
 

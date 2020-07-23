@@ -9,9 +9,11 @@ import (
 	"net/http"
 	"path/filepath"
 	"runtime/debug"
+	"strings"
 	"sync"
 	"text/template"
 
+	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
 
 	"micromdm.io/v2/pkg/log"
@@ -66,12 +68,20 @@ type Server struct {
 	templates map[string]*template.Template
 
 	siteName string
+
+	csrfKey        []byte
+	csrfCookieName string
+	csrfFieldName  string
 }
 
 // Config parameters to create a new Server.
 type Config struct {
 	Logger   log.Logger
 	SiteName string
+
+	CSRFKey        []byte
+	CSRFCookieName string
+	CSRFFieldName  string
 }
 
 // New creates a Server.
@@ -80,10 +90,15 @@ func New(config Config) (*Server, error) {
 		r:         mux.NewRouter(),
 		templates: make(map[string]*template.Template),
 		siteName:  config.SiteName,
+
+		csrfKey:        config.CSRFKey,
+		csrfFieldName:  config.CSRFFieldName,
+		csrfCookieName: config.CSRFCookieName,
 	}
 
 	srv.r.Use(
 		log.HTTP(config.Logger), // HTTP logging middleware.
+		srv.csrf,                // CSRF protection.
 		srv.recoverPanic,        // convert any panic into 500 errors.
 	)
 
@@ -219,6 +234,46 @@ func (srv *Server) recoverPanic(next http.Handler) http.Handler {
 		}()
 		next.ServeHTTP(w, r)
 	})
+}
+
+func csrfDisabled(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		logger := log.FromContext(r.Context())
+		log.Info(logger).Log("msg", "CSRF Protection disabled", "reason", "CSRF key not set.")
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (srv *Server) csrf(next http.Handler) http.Handler {
+	mw := csrfDisabled
+	if string(srv.csrfKey) != "" {
+		mw = csrf.Protect(
+			srv.csrfKey,
+			csrf.CookieName(srv.csrfCookieName),
+			csrf.FieldName(srv.csrfFieldName),
+			csrf.ErrorHandler(http.HandlerFunc(srv.csrfErrorHandler)),
+		)
+	}
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Excluding assets from setting the cookie.
+		// Refactor into a switch or callback? if adding other paths.
+		if strings.HasPrefix(r.URL.Path, "/assets/") {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		mw(next).ServeHTTP(w, r)
+	})
+}
+
+func (srv *Server) csrfErrorHandler(w http.ResponseWriter, r *http.Request) {
+	switch err := csrf.FailureReason(r); {
+	// TODO: add 403 cases
+	default:
+		srv.Fail(r.Context(), w, err, "msg", "csrf.Protect encountered an error")
+		return
+	}
 }
 
 func (srv *Server) notFound(w http.ResponseWriter, r *http.Request) {
