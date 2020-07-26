@@ -39,6 +39,8 @@ type cliFlags struct {
 	csrfKey        string
 	csrfCookieName string
 	csrfFieldName  string
+
+	databaseURL string
 }
 
 func micromdm(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
@@ -57,6 +59,7 @@ func micromdm(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	rootfs.StringVar(&cli.csrfKey, "csrf_key", "", "32 byte long key")
 	rootfs.StringVar(&cli.csrfCookieName, "csrf_cookie_name", "micromdm_csrf", "Name of CSRF Cookie")
 	rootfs.StringVar(&cli.csrfFieldName, "csrf_field_name", "micromdm.csrf", "Name of CSRF field name in HTML input")
+	rootfs.StringVar(&cli.databaseURL, "database_url", "build/_sqlite.db", "Database URL")
 
 	// default output is os.Stderr.
 	// setting the output and flag.ContinueOnError overrides allows testing usage.
@@ -101,7 +104,7 @@ func micromdm(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 				return err
 			}
 
-			srv, err := setup(cli, logger)
+			srv, err := setup(ctx, cli, logger)
 			if err != nil {
 				return err
 			}
