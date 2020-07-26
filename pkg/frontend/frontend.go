@@ -134,9 +134,31 @@ func (srv *Server) HandleFunc(path string, f func(http.ResponseWriter, *http.Req
 	srv.r.HandleFunc(path, f).Methods(methods...)
 }
 
-// Fail renders the 500 InternalServerError template and logs accordingly.
+// Fail renders an error template. The default behavior is to render 500.tmpl with
+// an http.StatusInternalServerError status code. Fail also checks for application specific failures
+// like form validation.
+// The first keyvals value could be the name of a template to use instead of 500.tmpl.
 func (srv *Server) Fail(ctx context.Context, w http.ResponseWriter, err error, keyvals ...interface{}) {
-	srv.RenderTemplate(ctx, w, "500.tmpl", Data{}.
+	tpl := "500.tmpl"
+	if len(keyvals) > 0 && strings.HasSuffix(keyvals[0].(string), ".tmpl") {
+		tpl, keyvals = keyvals[0].(string), keyvals[1:]
+	}
+
+	var validationErr interface {
+		error
+		Invalid() map[string]string
+	}
+
+	if errors.As(err, &validationErr) {
+		srv.RenderTemplate(ctx, w, tpl, Data{}.
+			FormErrors(validationErr.Invalid()).
+			WithLog(err, keyvals...).
+			WithCode(http.StatusBadRequest),
+		)
+		return
+	}
+
+	srv.RenderTemplate(ctx, w, tpl, Data{}.
 		WithLog(err, keyvals...).
 		WithCode(http.StatusInternalServerError),
 	)
@@ -158,11 +180,13 @@ func (srv *Server) RenderTemplate(ctx context.Context, w http.ResponseWriter, na
 		}
 
 		// log the template name, avoiding loops to srv.Fail
+		lvl := log.Info
 		if name != "500.tmpl" {
 			kv = append(kv, "template", name)
+			lvl = log.Debug
 		}
 
-		log.Info(logger).Log(kv...)
+		lvl(logger).Log(kv...)
 	}
 
 	tmpl, ok := srv.templates[name]
@@ -235,7 +259,6 @@ func (srv *Server) recoverPanic(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
-
 func csrfDisabled(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		logger := log.FromContext(r.Context())
