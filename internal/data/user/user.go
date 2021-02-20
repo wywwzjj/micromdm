@@ -129,11 +129,38 @@ func create(username, email, password string) (*User, error) {
 
 type Error struct {
 	invalid map[string]string
+
+	// missingEmail gets set when the user tries to log in without a real email.
+	// This causes the frontend to respond with an "Invalid email or password" message.
+	// Might want to change this implementation later, just needed something quick.
+	missingEmail string
+	missingHash  string
 }
 
-func (err Error) Invalid() map[string]string { return err.invalid }
+func (err Error) Invalid() map[string]string {
+	switch {
+	case err.missingHash != "":
+		return map[string]string{
+			"confirmation_hash": "Confirmation token unknown or already used.",
+		}
+	case err.missingEmail != "":
+		return map[string]string{
+			"email":    "Invalid email or password.",
+			"password": "Invalid email or password.",
+		}
+	default:
+		return err.invalid
+	}
+}
 
 func (err Error) Error() string {
+	switch {
+	case err.missingEmail != "":
+		return fmt.Sprintf("user with email %q not found", err.missingEmail)
+	case err.missingHash != "":
+		return fmt.Sprintf("user confirmation hash %q", err.missingHash)
+	}
+
 	switch len(err.invalid) {
 	case 0:
 		return "user validation failed"

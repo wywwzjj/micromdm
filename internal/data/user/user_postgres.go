@@ -56,7 +56,7 @@ func (d *Postgres) ConfirmUser(ctx context.Context, confirmation string) error {
 	if tag, err := d.db.Exec(ctx, q, confirmation); err != nil {
 		return fmt.Errorf("set postgres confirmation_hash to NULL: %w", err)
 	} else if tag.RowsAffected() == 0 {
-		return errors.New("unknown confirmation_hash in postgres")
+		return Error{missingHash: confirmation}
 	}
 
 	return nil
@@ -79,7 +79,7 @@ func (d *Postgres) FindUserByEmail(ctx context.Context, email string) (*User, er
 		&u.CreatedAt,
 		&u.UpdatedAt,
 	); err == pgx.ErrNoRows {
-		return nil, fmt.Errorf("user (email %q) not found in postgres", email)
+		return nil, Error{missingEmail: email}
 	} else if err != nil {
 		return nil, err
 	}

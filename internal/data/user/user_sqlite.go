@@ -82,7 +82,7 @@ func (d *SQLite) ConfirmUser(ctx context.Context, confirmation string) error {
 	}
 
 	if conn.Changes() == 0 {
-		return errors.New("unknown confirmation_hash in sqlite")
+		return Error{missingHash: confirmation}
 	}
 
 	return nil
@@ -105,7 +105,7 @@ func (d *SQLite) FindUserByEmail(ctx context.Context, email string) (*User, erro
 	if found, err := stmt.Step(); err != nil {
 		return nil, err
 	} else if !found {
-		return nil, fmt.Errorf("user (email %q) not found in sqlite", email)
+		return nil, Error{missingEmail: email}
 	}
 
 	usr, err := sqliteUser(stmt)

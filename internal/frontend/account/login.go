@@ -37,12 +37,12 @@ func (srv server) loginForm(w http.ResponseWriter, r *http.Request) {
 
 	usr, err := srv.userdb.FindUserByEmail(ctx, email)
 	if err != nil {
-		srv.http.Fail(ctx, w, err, "msg", "find user for auth")
+		srv.http.Fail(ctx, w, err, "login.tmpl", "msg", "find user for auth")
 		return
 	}
 
 	if err := usr.ValidatePassword(password); err != nil {
-		srv.http.Fail(ctx, w, err, "msg", "auth user")
+		srv.http.Fail(ctx, w, err, "login.tmpl", "msg", "auth user")
 		return
 	}
 
