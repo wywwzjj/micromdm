@@ -9,14 +9,15 @@ require (
 	github.com/gorilla/csrf v1.7.0
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/securecookie v1.1.1
-	github.com/jackc/pgconn v1.7.2
-	github.com/jackc/pgx/v4 v4.9.2
+	github.com/jackc/pgconn v1.8.0
+	github.com/jackc/pgproto3/v2 v2.0.7 // indirect
+	github.com/jackc/pgx/v4 v4.10.1
 	github.com/oklog/run v1.1.0
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/oklog/ulid/v2 v2.0.2
 	github.com/peterbourgon/ff/v3 v3.0.0
-	golang.org/x/crypto v0.0.0-20201124201722-c8d3bf9c5392
-	golang.org/x/text v0.3.4 // indirect
+	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83
+	golang.org/x/text v0.3.5 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	rsc.io/goversion v1.2.0
 )
