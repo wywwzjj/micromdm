@@ -183,8 +183,15 @@ func (err Error) Error() string {
 	}
 }
 
-var constraints = map[string]map[string]string{
-	"chk_email_not_empty":    map[string]string{"email": "You must provide an email address."},
-	"chk_username_not_empty": map[string]string{"username": "You must provide a username."},
-	"chk_password_not_empty": map[string]string{"password": "You must provide a password."},
-}
+var (
+	constraints = map[string]map[string]string{
+		"chk_email_not_empty":    map[string]string{"email": "You must provide an email address."},
+		"chk_username_not_empty": map[string]string{"username": "You must provide a username."},
+		"chk_password_not_empty": map[string]string{"password": "You must provide a password."},
+	}
+
+	constraintsUnique = map[string]map[string]string{
+		"users.username": map[string]string{"username": "This username already exists."},
+		"users.email":    map[string]string{"email": "This email already exists."},
+	}
+)

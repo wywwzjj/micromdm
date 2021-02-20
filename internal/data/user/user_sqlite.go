@@ -151,6 +151,11 @@ func checkSqlite(err error) error {
 	}
 
 	switch sErr.Code {
+	case sqlite.SQLITE_CONSTRAINT_UNIQUE:
+		c := strings.Split(sErr.Msg, ": ")
+		if kv, ok := constraintsUnique[c[len(c)-1]]; ok {
+			return Error{invalid: kv}
+		}
 	case sqlite.SQLITE_CONSTRAINT_CHECK:
 		c := strings.Split(sErr.Msg, ": ")
 		if kv, ok := constraints[c[len(c)-1]]; ok {
