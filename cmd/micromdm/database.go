@@ -112,7 +112,6 @@ type postgresdb struct {
 }
 
 func setupPostgres(ctx context.Context, f *cliFlags, logger log.Logger) (*postgresdb, error) {
-	//dbpool, err := pgxpool.Connect(ctx, "host=localhost port=5432 user=app dbname=app password=secret sslmode=disable")
 	dbpool, err := pgxpool.Connect(ctx, f.databaseURL)
 	if err != nil {
 		return nil, err
