@@ -13,8 +13,6 @@ import (
 
 func (srv server) registerForm(w http.ResponseWriter, r *http.Request) {
 	var (
-		ctx      = r.Context()
-		logger   = log.FromContext(ctx)
 		username = r.FormValue("username")
 		email    = r.FormValue("email")
 		password = r.FormValue("password")
@@ -26,6 +24,8 @@ func (srv server) registerForm(w http.ResponseWriter, r *http.Request) {
 				"password": password,
 			},
 		}
+		ctx    = frontend.AddFormData(r.Context(), data)
+		logger = log.FromContext(ctx)
 	)
 
 	if r.Method == http.MethodGet {

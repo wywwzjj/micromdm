@@ -14,8 +14,6 @@ import (
 
 func (srv server) loginForm(w http.ResponseWriter, r *http.Request) {
 	var (
-		ctx      = r.Context()
-		logger   = log.FromContext(ctx)
 		email    = r.FormValue("email")
 		password = r.FormValue("password")
 		data     = frontend.Data{
@@ -25,6 +23,8 @@ func (srv server) loginForm(w http.ResponseWriter, r *http.Request) {
 				"password": password,
 			},
 		}
+		ctx    = frontend.AddFormData(r.Context(), data)
+		logger = log.FromContext(ctx)
 	)
 
 	if r.Method == http.MethodGet {

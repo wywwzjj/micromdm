@@ -174,7 +174,7 @@ func (srv *Server) Fail(ctx context.Context, w http.ResponseWriter, err error, k
 	}
 
 	if errors.As(err, &validationErr) {
-		srv.RenderTemplate(ctx, w, tpl, Data{}.
+		srv.RenderTemplate(ctx, w, tpl, dataFromContext(ctx).
 			FormErrors(validationErr.Invalid()).
 			WithLog(err, keyvals...).
 			WithCode(http.StatusBadRequest),
