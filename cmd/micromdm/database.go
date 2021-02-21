@@ -84,25 +84,6 @@ func sqliteInit(conn *sqlite.Conn) error {
 		return err
 	}
 
-	var (
-		migrations []byte
-		script     = "internal/data/migrations/sqlite/initial_tables.sql"
-	)
-
-	// only load and run migrations script if the path exists.
-	// temporary workaround for tests which will have to be
-	// replaced once the schema needs to exist for the tests.
-	if _, err := os.Stat(script); err == nil {
-		migrations, err = ioutil.ReadFile(script)
-		if err != nil {
-			return err
-		}
-	}
-
-	if err := sqlitex.ExecScript(conn, string(migrations)); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -117,13 +98,6 @@ func setupPostgres(ctx context.Context, f *cliFlags, logger log.Logger) (*postgr
 		return nil, err
 	}
 
-	// temporary until migrations are set up
-	migrations, err := ioutil.ReadFile("internal/data/migrations/postgres/initial_tables.sql")
-	if _, err := dbpool.Exec(ctx, string(migrations)); err != nil {
-		dbpool.Close()
-		return nil, err
-	}
-
 	db := &postgresdb{
 		userdb:    user.NewPostgres(dbpool),
 		sessiondb: session.NewPostgres(dbpool),
@@ -132,4 +106,53 @@ func setupPostgres(ctx context.Context, f *cliFlags, logger log.Logger) (*postgr
 	log.Debug(logger).Log("msg", "connected to db", "backend", "postgres")
 
 	return db, nil
+}
+
+func migrate(ctx context.Context, f *cliFlags, logger log.Logger) error {
+	var err error
+	switch driver := dbDriver(f.databaseURL); driver {
+	case "postgres":
+		dbpool, err := pgxpool.Connect(ctx, f.databaseURL)
+		if err != nil {
+			return err
+		}
+		log.Info(logger).Log("msg", "connected to db", "backend", driver)
+
+		migrations, err := ioutil.ReadFile("internal/data/migrations/postgres/initial_tables.sql")
+		if _, err := dbpool.Exec(ctx, string(migrations)); err != nil {
+			dbpool.Close()
+			return err
+		}
+		return nil
+
+	case "sqlite":
+		conn, err := sqlite.OpenConn(f.databaseURL, 0)
+		if err != nil {
+			return fmt.Errorf("open sqlite dbfile: %s", err)
+		}
+		log.Info(logger).Log("msg", "connected to db", "backend", driver)
+
+		var (
+			migrations []byte
+			script     = "internal/data/migrations/sqlite/initial_tables.sql"
+		)
+
+		// only load and run migrations script if the path exists.
+		// temporary workaround for tests which will have to be
+		// replaced once the schema needs to exist for the tests.
+		if _, err := os.Stat(script); err == nil {
+			migrations, err = ioutil.ReadFile(script)
+			if err != nil {
+				return err
+			}
+		}
+
+		if err := sqlitex.ExecScript(conn, string(migrations)); err != nil {
+			return err
+		}
+	default:
+		err = fmt.Errorf("unsupported database_url value or restricted path %q", f.databaseURL)
+	}
+
+	return err
 }

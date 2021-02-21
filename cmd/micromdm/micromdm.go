@@ -78,6 +78,26 @@ func micromdm(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		},
 	}
 
+	migrate := &ffcli.Command{
+		Name:       "migrate",
+		ShortUsage: "migrate [<arg> ...]",
+		ShortHelp:  "Run database migrations.",
+		Exec: func(_ context.Context, args []string) error {
+			logOpts := []log.Option{log.Output(stderr)}
+			if cli.debug {
+				logOpts = append(logOpts, log.StartDebug())
+			}
+
+			logger = log.New(logOpts...)
+			err := migrate(ctx, cli, logger)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		},
+	}
+
 	// add a help subcommand to make usage more discoverable.
 	helpCmd := &ffcli.Command{
 		Name:      "help",
@@ -93,7 +113,7 @@ func micromdm(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		ShortUsage:  "micromdm [flags] <subcommand>",
 		FlagSet:     rootfs,
 		Options:     []ff.Option{ff.WithEnvVarPrefix("MICROMDM"), ff.WithConfigFileParser(ff.PlainParser), ff.WithConfigFileFlag("config")},
-		Subcommands: []*ffcli.Command{helpCmd, version},
+		Subcommands: []*ffcli.Command{helpCmd, version, migrate},
 		Exec: func(context.Context, []string) error {
 
 			logOpts := []log.Option{log.Output(stderr)}
