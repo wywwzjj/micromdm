@@ -88,6 +88,29 @@ func (d *SQLite) ConfirmUser(ctx context.Context, confirmation string) error {
 	return nil
 }
 
+func (d *SQLite) FindUser(ctx context.Context, id string) (*User, error) {
+	conn := d.db.Get(ctx)
+	if conn == nil {
+		return nil, context.Canceled
+	}
+	defer d.db.Put(conn)
+
+	stmt := conn.Prep(fmt.Sprintf(
+		`SELECT %s FROM users WHERE id = $id;`, strings.Join(columns(), `, `)))
+	stmt.SetText("$id", id)
+	if found, err := stmt.Step(); err != nil {
+		return nil, err
+	} else if !found {
+		return nil, fmt.Errorf("did not find user with id %q", id)
+	}
+
+	usr, err := sqliteUser(stmt)
+	if err != nil {
+		return nil, err
+	}
+	return usr, stmt.Reset()
+}
+
 func (d *SQLite) FindUserByEmail(ctx context.Context, email string) (*User, error) {
 	conn := d.db.Get(ctx)
 	if conn == nil {

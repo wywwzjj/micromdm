@@ -62,6 +62,26 @@ func (d *Postgres) ConfirmUser(ctx context.Context, confirmation string) error {
 	return nil
 }
 
+func (d *Postgres) FindUser(ctx context.Context, id string) (*User, error) {
+
+	u := &User{}
+	q := fmt.Sprintf(`SELECT %s FROM users WHERE id = $1;`, strings.Join(columns(), `, `))
+	if err := d.db.QueryRow(ctx, q, id).Scan(
+		&u.ID,
+		&u.Username,
+		&u.Email,
+		&u.Password,
+		&u.Salt,
+		&u.ConfirmationHash,
+		&u.CreatedAt,
+		&u.UpdatedAt,
+	); err != nil {
+		return nil, err
+	}
+
+	return u, nil
+}
+
 func (d *Postgres) FindUserByEmail(ctx context.Context, email string) (*User, error) {
 	if email == "" {
 		return nil, Error{invalid: constraints["chk_email_not_empty"]}
