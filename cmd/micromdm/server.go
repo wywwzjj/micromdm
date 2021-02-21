@@ -21,6 +21,7 @@ func ui(
 	f *cliFlags,
 	logger log.Logger,
 	sess frontend.SessionStore,
+	user frontend.UserStore,
 	cookie *securecookie.SecureCookie,
 ) (*frontend.Server, error) {
 	return frontend.New(frontend.Config{
@@ -31,6 +32,7 @@ func ui(
 		CSRFFieldName:  f.csrfFieldName,
 		AuthCookieName: f.authCookieName,
 		SessionStore:   sess,
+		UserStore:      user,
 		Cookie:         cookie,
 	})
 }
@@ -59,7 +61,7 @@ func setup(ctx context.Context, f *cliFlags, logger log.Logger) (*server, error)
 		return nil, err
 	}
 
-	uisrv, err := ui(f, logger, db.sessiondb().(frontend.SessionStore), sc)
+	uisrv, err := ui(f, logger, db.sessiondb().(frontend.SessionStore), db.userdb().(frontend.UserStore), sc)
 	if err != nil {
 		return nil, err
 	}

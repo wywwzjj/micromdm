@@ -54,6 +54,7 @@ func (srv server) loginForm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Debug(logger).Log("msg", "logged in", "user_id", usr.ID)
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func (srv server) logout(w http.ResponseWriter, r *http.Request) {

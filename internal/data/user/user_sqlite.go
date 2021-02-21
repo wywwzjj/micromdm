@@ -146,6 +146,7 @@ func sqliteUser(stmt *sqlite.Stmt) (*User, error) {
 
 	u.ID = stmt.GetText("id")
 	u.Email = stmt.GetText("email")
+	u.Username = stmt.GetText("username")
 	u.Password = []byte(stmt.GetText("password"))
 	u.Salt = []byte(stmt.GetText("salt"))
 

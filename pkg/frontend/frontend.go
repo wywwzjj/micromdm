@@ -20,6 +20,7 @@ import (
 	"github.com/gorilla/securecookie"
 
 	"micromdm.io/v2/internal/data/session"
+	"micromdm.io/v2/internal/data/user"
 	"micromdm.io/v2/pkg/log"
 	"micromdm.io/v2/pkg/viewer"
 )
@@ -69,6 +70,10 @@ type SessionStore interface {
 	FindSession(ctx context.Context, id string) (*session.Session, error)
 }
 
+type UserStore interface {
+	FindUser(ctx context.Context, id string) (*user.User, error)
+}
+
 // Server implements Framework.
 type Server struct {
 	r *mux.Router
@@ -84,6 +89,7 @@ type Server struct {
 
 	authCookieName string
 	sessiondb      SessionStore
+	userdb         UserStore
 	cookie         *securecookie.SecureCookie
 }
 
@@ -98,6 +104,7 @@ type Config struct {
 
 	AuthCookieName string
 	SessionStore   SessionStore
+	UserStore      UserStore
 	Cookie         *securecookie.SecureCookie
 }
 
@@ -113,6 +120,7 @@ func New(config Config) (*Server, error) {
 		csrfCookieName: config.CSRFCookieName,
 		authCookieName: config.AuthCookieName,
 		sessiondb:      config.SessionStore,
+		userdb:         config.UserStore,
 		cookie:         config.Cookie,
 	}
 
@@ -192,6 +200,10 @@ func (srv *Server) Fail(ctx context.Context, w http.ResponseWriter, err error, k
 // RenderTemplate renders HTML templates.
 func (srv *Server) RenderTemplate(ctx context.Context, w http.ResponseWriter, name string, data Data) {
 	logger := log.FromContext(ctx)
+
+	if v, ok := viewer.FromContext(ctx); ok {
+		data["viewer"] = v
+	}
 
 	data["trace_id"] = log.TraceID(ctx)
 	data["siteName"] = srv.siteName
@@ -400,9 +412,16 @@ func (srv *Server) authMW(next http.Handler) http.Handler {
 			return
 		}
 
+		usr, err := srv.userdb.FindUser(ctx, sess.UserID)
+		if err != nil {
+			srv.Fail(r.Context(), w, err, "msg", "auth failed to find user for session")
+			return
+		}
+
 		ctx = viewer.NewContext(ctx, viewer.Viewer{
 			UserID:    sess.UserID,
 			SessionID: sess.ID,
+			Username:  usr.Username,
 		})
 
 		if strings.HasPrefix(r.URL.Path, "/login") {
