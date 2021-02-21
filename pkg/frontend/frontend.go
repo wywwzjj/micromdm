@@ -407,7 +407,7 @@ func (srv *Server) authMW(next http.Handler) http.Handler {
 
 		if strings.HasPrefix(r.URL.Path, "/login") {
 			level.Debug(logger).Log("msg", "redirect session to dashboard page", "session_id", sess.ID)
-			http.Redirect(w, r, "/dashboard", http.StatusFound)
+			http.Redirect(w, r, "/", http.StatusFound)
 			return
 		}
 
